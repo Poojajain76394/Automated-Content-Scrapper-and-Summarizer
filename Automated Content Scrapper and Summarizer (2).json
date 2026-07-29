@@ -1,0 +1,651 @@
+{
+  "name": "Automated Content Scrapper and Summarizer",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.keyword }}"
+            },
+            {
+              "name": "maxresults",
+              "value": "5"
+            },
+            {
+              "name": "type",
+              "value": "video"
+            },
+            {
+              "name": "key",
+              "value": "AIzaSyCrZ6Kuz5oO-CRwFg21fSNHgqPa86EXq0k"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -144,
+        -48
+      ],
+      "id": "684f955c-dbb0-4bd5-bcb8-7400be2e0aeb",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        64,
+        -48
+      ],
+      "id": "dfeb4968-aaa5-4163-b2a7-7d2df51001f6",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bb830158-ea30-4bf6-af3b-22789695f9e4",
+              "name": "title",
+              "value": "={{ $json.snippet.title }}",
+              "type": "string"
+            },
+            {
+              "id": "94b524ba-0865-4c10-a793-d33007d0316f",
+              "name": "description",
+              "value": "={{ $json.snippet.description }}",
+              "type": "string"
+            },
+            {
+              "id": "756a2a69-47cf-460f-9e72-5a30f6100c60",
+              "name": "channel",
+              "value": "={{ $json.snippet.channelTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "15ab252d-3e55-42ba-b279-19ac4bcaa746",
+              "name": "publishedAt",
+              "value": "={{ $json.snippet.publishedAt }}",
+              "type": "string"
+            },
+            {
+              "id": "9dc60126-365d-4a1f-aa54-59635679b97c",
+              "name": "videoId",
+              "value": "={{ $json.id.videoId }}",
+              "type": "string"
+            },
+            {
+              "id": "7e0c6e19-1feb-4b98-9c7c-8483e93134be",
+              "name": "video URL",
+              "value": "={{ 'https://www.youtube.com/watch?v=' + $json.id.videoId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        -48
+      ],
+      "id": "ac8276ea-dff8-4e08-8190-bb4eeb5b8fc6",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following YouTube video using the provided title and description:\n\nTitle: {{ $json.title }}\nDescription: {{ $json.description }}\n\nInstructions:\n1. Summarize the video content based on the description.\n2. Generate 5 key takeaways.\n3. Suggest 5 fresh content ideas related to this topic.\n4. Extract 10-15 relevant SEO keywords.\n5. Identify potential audience pain points addressed in this content.\n6. Create 3 engaging Call-to-Action (CTA) ideas.\n\nEven if the description is short, use your knowledge to generate creative and accurate points. Do not return empty fields.\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an expert content research assistant. \n\n\n\n\n\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        480,
+        -48
+      ],
+      "id": "461cf4fb-ed58-4344-91a6-4b2e45926ffd",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1W_1R_AEh6ZrmuRGxJ70gcbwwPzQnyn823rIZwTa68YA",
+          "mode": "list",
+          "cachedResultName": "content ideas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W_1R_AEh6ZrmuRGxJ70gcbwwPzQnyn823rIZwTa68YA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1W_1R_AEh6ZrmuRGxJ70gcbwwPzQnyn823rIZwTa68YA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Title": "={{ $('Edit Fields1').item.json.title }}",
+            "Summary": "={{ $json.output.summary }}",
+            "Key Takeaways": "={{ $json.output.key_takeaways }}",
+            "Content ideas": "={{ $json.output.content_ideas }}",
+            "Keywords": "={{ $json.output.keywords }}",
+            "Audience Pain Points": "={{ $json.output.pain_points }}",
+            "CTA ideas": "={{ $json.output.cta_ideas }}",
+            "Channel": "={{ $('Edit Fields1').item.json.channel }}",
+            "video URL": "={{ $('Edit Fields1').item.json['video URL'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Channel",
+              "displayName": "Channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "video URL",
+              "displayName": "video URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Content ideas",
+              "displayName": "Content ideas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Audience Pain Points",
+              "displayName": "Audience Pain Points",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CTA ideas",
+              "displayName": "CTA ideas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Key Takeaways",
+              "displayName": "Key Takeaways",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        864,
+        -80
+      ],
+      "id": "d22c55c7-31b5-4173-811c-3896e2f205c2",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sUS43LG19o9HxEnJ",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1gyM1NtoKosG6HlD4FMlWBYc_648m6x74P8inzFtH7fE",
+          "mode": "list",
+          "cachedResultName": "Content Ideas (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gyM1NtoKosG6HlD4FMlWBYc_648m6x74P8inzFtH7fE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 92018277,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gyM1NtoKosG6HlD4FMlWBYc_648m6x74P8inzFtH7fE/edit#gid=92018277"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        -80
+      ],
+      "id": "22387de9-6f31-4987-b484-6888a30a6e37",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "QL6rotawG1PjamIP",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b38cae39-7bc6-4cc1-bdc7-a69983d018bc",
+              "name": "keyword",
+              "value": "={{ $json['Enter your keyword'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        -48
+      ],
+      "id": "d80454a4-e9ae-49bc-a901-7ca78cc66ef1",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        352,
+        160
+      ],
+      "id": "b86b827c-8a28-4fad-9e9a-b9b6e65cc2c6",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Vwo4Pmj4lizOhS1Q",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"improved_title\": \"SEO Title Example\",\n  \"summary\": \"Video summary text here\",\n  \"key_takeaways\": \"Takeaway points here\",\n  \"content_ideas\": \"Ideas list here\",\n  \"keywords\": \"n8n, automation, ai\",\n  \"pain_points\": \"Pain points here\",\n  \"cta_ideas\": \"CTA example here\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        160
+      ],
+      "id": "e734c063-69f2-4054-98c9-19708f3d3dff",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1gyM1NtoKosG6HlD4FMlWBYc_648m6x74P8inzFtH7fE",
+          "mode": "list",
+          "cachedResultName": "Content Ideas (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gyM1NtoKosG6HlD4FMlWBYc_648m6x74P8inzFtH7fE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 92018277,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gyM1NtoKosG6HlD4FMlWBYc_648m6x74P8inzFtH7fE/edit#gid=92018277"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -608,
+        -80
+      ],
+      "id": "dfee0687-bc3a-48f6-92c7-25bbfb867ba8",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sUS43LG19o9HxEnJ",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -544,
+        128
+      ],
+      "id": "e543ffff-0d1d-4060-aa6d-7de7d04ef6c9",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1gyM1NtoKosG6HlD4FMlWBYc_648m6x74P8inzFtH7fE",
+          "mode": "list",
+          "cachedResultName": "Content Ideas (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gyM1NtoKosG6HlD4FMlWBYc_648m6x74P8inzFtH7fE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 92018277,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gyM1NtoKosG6HlD4FMlWBYc_648m6x74P8inzFtH7fE/edit#gid=92018277"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Done",
+            "Enter your keyword": "={{ $('Edit Fields').item.json.keyword }}"
+          },
+          "matchingColumns": [
+            "Enter your keyword"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Enter your keyword",
+              "displayName": "Enter your keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1072,
+        -32
+      ],
+      "id": "9bf8401b-7ab9-4721-adf8-e93143a3b900",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sUS43LG19o9HxEnJ",
+          "name": "Google Sheets account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "70bd947f-200b-4b16-8c7c-344d0a330c3c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "054ce02231155a1d748143ba0563bae8d565f193afc114dc6519d869114ff7c6"
+  },
+  "nodeGroups": [],
+  "id": "KLiKLgmx9kMEvBKX",
+  "tags": []
+}
